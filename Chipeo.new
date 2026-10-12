@@ -1,0 +1,306 @@
+
+--[[
+    CHIPEO v2.0
+    Menu VIP y menu de clientes
+    Para Roblox Studio
+]]
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local OWNER_KEY = "ENRIQUEVIP"
+local CLIENT_KEY = "ENRIQUECLIENT"
+
+local tipoAcceso = nil
+local autoFarm = false
+
+-- Evitar duplicados al volver a ejecutar
+local anterior = playerGui:FindFirstChild("Chipeo")
+if anterior then
+    anterior:Destroy()
+end
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "Chipeo"
+gui.ResetOnSpawn = false
+gui.Parent = playerGui
+
+local function crear(class, props, parent)
+    local obj = Instance.new(class)
+    for property, value in pairs(props) do
+        obj[property] = value
+    end
+    obj.Parent = parent
+    return obj
+end
+
+local function redondear(obj)
+    crear("UICorner", {
+        CornerRadius = UDim.new(0, 10)
+    }, obj)
+end
+
+local function boton(parent, texto, y, color)
+    local b = crear("TextButton", {
+        Size = UDim2.new(1, -30, 0, 40),
+        Position = UDim2.new(0, 15, 0, y),
+        BackgroundColor3 = color or Color3.fromRGB(0, 150, 90),
+        Text = texto,
+        TextColor3 = Color3.new(1, 1, 1),
+        TextSize = 14,
+        Font = Enum.Font.GothamBold
+    }, parent)
+    redondear(b)
+    return b
+end
+
+local function titulo(parent, texto)
+    crear("TextLabel", {
+        Size = UDim2.new(1, -45, 0, 42),
+        Position = UDim2.new(0, 10, 0, 0),
+        BackgroundTransparency = 1,
+        Text = texto,
+        TextColor3 = Color3.fromRGB(0, 255, 150),
+        TextSize = 17,
+        Font = Enum.Font.GothamBold
+    }, parent)
+end
+
+local function panel(nombre, alto)
+    local p = crear("Frame", {
+        Name = nombre,
+        Size = UDim2.fromOffset(320, alto),
+        Position = UDim2.new(0.5, -160, 0.5, -alto/2),
+        BackgroundColor3 = Color3.fromRGB(25, 25, 32),
+        BorderSizePixel = 0,
+        Visible = false
+    }, gui)
+    redondear(p)
+
+    local cerrar = crear("TextButton", {
+        Size = UDim2.fromOffset(32, 32),
+        Position = UDim2.new(1, -38, 0, 5),
+        BackgroundColor3 = Color3.fromRGB(190, 50, 60),
+        Text = "X",
+        TextColor3 = Color3.new(1, 1, 1),
+        TextSize = 16,
+        Font = Enum.Font.GothamBold
+    }, p)
+    redondear(cerrar)
+
+    return p, cerrar
+end
+
+-- Acceso
+local acceso = crear("Frame", {
+    Name = "Acceso",
+    Size = UDim2.fromOffset(300, 190),
+    Position = UDim2.new(0.5, -150, 0.5, -95),
+    BackgroundColor3 = Color3.fromRGB(25, 25, 32),
+    BorderSizePixel = 0
+}, gui)
+redondear(acceso)
+
+crear("TextLabel", {
+    Size = UDim2.new(1, 0, 0, 45),
+    BackgroundTransparency = 1,
+    Text = "CHIPEO",
+    TextColor3 = Color3.fromRGB(0, 255, 150),
+    TextSize = 25,
+    Font = Enum.Font.GothamBold
+}, acceso)
+
+local cajaKey = crear("TextBox", {
+    Size = UDim2.new(1, -30, 0, 40),
+    Position = UDim2.new(0, 15, 0, 55),
+    BackgroundColor3 = Color3.fromRGB(42, 42, 52),
+    TextColor3 = Color3.new(1, 1, 1),
+    PlaceholderText = "Introduce la key",
+    PlaceholderColor3 = Color3.fromRGB(170, 170, 180),
+    Text = "",
+    TextSize = 16,
+    Font = Enum.Font.Gotham,
+    ClearTextOnFocus = false
+}, acceso)
+redondear(cajaKey)
+
+local entrar = boton(acceso, "ENTRAR", 105,
+    Color3.fromRGB(0, 190, 110))
+
+local mensaje = crear("TextLabel", {
+    Size = UDim2.new(1, -20, 0, 25),
+    Position = UDim2.new(0, 10, 1, -27),
+    BackgroundTransparency = 1,
+    Text = "",
+    TextColor3 = Color3.fromRGB(255, 90, 90),
+    TextSize = 13,
+    Font = Enum.Font.Gotham
+}, acceso)
+
+-- Menu de clientes
+local cliente, cerrarCliente = panel("MenuCliente", 220)
+titulo(cliente, "CHIPEO | CLIENTE")
+
+crear("TextLabel", {
+    Size = UDim2.new(1, -30, 0, 30),
+    Position = UDim2.new(0, 15, 0, 45),
+    BackgroundTransparency = 1,
+    Text = "Auto Farm: DESACTIVADO",
+    TextColor3 = Color3.new(1, 1, 1),
+    TextSize = 14,
+    Font = Enum.Font.Gotham
+}, cliente).Name = "EstadoFarm"
+
+local farmBoton = boton(cliente, "ACTIVAR AUTO FARM", 85,
+    Color3.fromRGB(0, 150, 90))
+
+crear("TextLabel", {
+    Size = UDim2.new(1, -30, 0, 48),
+    Position = UDim2.new(0, 15, 0, 135),
+    BackgroundTransparency = 1,
+    Text = "El interruptor controla el estado de la interfaz.",
+    TextColor3 = Color3.fromRGB(175, 175, 185),
+    TextSize = 12,
+    TextWrapped = true,
+    Font = Enum.Font.Gotham
+}, cliente)
+
+-- Menu VIP
+local vip, cerrarVIP = panel("MenuVIP", 280)
+titulo(vip, "CHIPEO | VIP")
+
+crear("TextLabel", {
+    Size = UDim2.new(1, -30, 0, 28),
+    Position = UDim2.new(0, 15, 0, 42),
+    BackgroundTransparency = 1,
+    Text = "Panel exclusivo del dueño",
+    TextColor3 = Color3.new(1, 1, 1),
+    TextSize = 13,
+    Font = Enum.Font.Gotham
+}, vip)
+
+local verCoordenadas = boton(vip, "VER MIS COORDENADAS", 75,
+    Color3.fromRGB(65, 95, 170))
+
+local coordenadas = crear("TextLabel", {
+    Size = UDim2.new(1, -25, 0, 45),
+    Position = UDim2.new(0, 12, 0, 120),
+    BackgroundTransparency = 1,
+    Text = "Coordenadas: sin consultar",
+    TextColor3 = Color3.fromRGB(220, 220, 230),
+    TextSize = 12,
+    TextWrapped = true,
+    Font = Enum.Font.Gotham
+}, vip)
+
+local irClientes = boton(vip, "ABRIR MENU DE CLIENTES", 175,
+    Color3.fromRGB(0, 150, 90))
+
+-- Boton flotante
+local abrir = crear("TextButton", {
+    Name = "AbrirChipeo",
+    Size = UDim2.fromOffset(115, 40),
+    Position = UDim2.new(0, 15, 0.5, 0),
+    BackgroundColor3 = Color3.fromRGB(0, 190, 110),
+    Text = "CHIPEO",
+    TextColor3 = Color3.new(1, 1, 1),
+    TextSize = 16,
+    Font = Enum.Font.GothamBold,
+    Visible = false
+}, gui)
+redondear(abrir)
+
+local function ocultarMenus()
+    cliente.Visible = false
+    vip.Visible = false
+end
+
+local function abrirMenuCorrecto()
+    ocultarMenus()
+
+    if tipoAcceso == "DUEÑO" then
+        vip.Visible = true
+    elseif tipoAcceso == "CLIENTE" then
+        cliente.Visible = true
+    end
+
+    abrir.Visible = false
+end
+
+local function comprobarKey()
+    local key = cajaKey.Text:match("^%s*(.-)%s*$")
+
+    if key == OWNER_KEY then
+        tipoAcceso = "DUEÑO"
+    elseif key == CLIENT_KEY then
+        tipoAcceso = "CLIENTE"
+    else
+        mensaje.Text = "Key incorrecta"
+        cajaKey.Text = ""
+        return
+    end
+
+    acceso.Visible = false
+    mensaje.Text = ""
+    abrirMenuCorrecto()
+end
+
+entrar.Activated:Connect(comprobarKey)
+
+cajaKey.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        comprobarKey()
+    end
+end)
+
+cerrarCliente.Activated:Connect(function()
+    cliente.Visible = false
+    abrir.Visible = true
+end)
+
+cerrarVIP.Activated:Connect(function()
+    vip.Visible = false
+    abrir.Visible = true
+end)
+
+abrir.Activated:Connect(abrirMenuCorrecto)
+
+farmBoton.Activated:Connect(function()
+    autoFarm = not autoFarm
+
+    local estado = cliente:FindFirstChild("EstadoFarm")
+    if autoFarm then
+        estado.Text = "Auto Farm: ACTIVADO"
+        farmBoton.Text = "DESACTIVAR AUTO FARM"
+        farmBoton.BackgroundColor3 =
+            Color3.fromRGB(190, 60, 60)
+    else
+        estado.Text = "Auto Farm: DESACTIVADO"
+        farmBoton.Text = "ACTIVAR AUTO FARM"
+        farmBoton.BackgroundColor3 =
+            Color3.fromRGB(0, 150, 90)
+    end
+end)
+
+verCoordenadas.Activated:Connect(function()
+    local character = player.Character
+    local root = character and character:FindFirstChild("HumanoidRootPart")
+
+    if root then
+        local p = root.Position
+        coordenadas.Text = string.format(
+            "X: %.1f | Y: %.1f | Z: %.1f",
+            p.X, p.Y, p.Z
+        )
+    else
+        coordenadas.Text = "Personaje no disponible"
+    end
+end)
+
+irClientes.Activated:Connect(function()
+    vip.Visible = false
+    cliente.Visible = true
+end)
+
+print("CHIPEO v2.0 cargado correctamente")
