@@ -1,0 +1,385 @@
+--[[
+    CHIPEO v3.0 FIX
+    Tema azul | OWNER | CLIENTES
+    Interfaz y destinos de sesion
+]]
+
+local Players = game:GetService("Players")
+local player = Players.LocalPlayer
+local playerGui = player:WaitForChild("PlayerGui")
+
+local OWNER_KEY = "ENRIQUEVIP"
+local CLIENT_KEY = "ENRIQUECLIENT"
+
+local BLUE = Color3.fromRGB(0, 145, 255)
+local DARK = Color3.fromRGB(12, 20, 38)
+local PANEL = Color3.fromRGB(20, 33, 57)
+local WHITE = Color3.fromRGB(245, 248, 255)
+
+local accessType
+local farmEnabled = false
+local farmTarget = "Monedas"
+local destinations = {}
+
+local old = playerGui:FindFirstChild("Chipeo")
+if old then
+    old:Destroy()
+end
+
+local gui = Instance.new("ScreenGui")
+gui.Name = "Chipeo"
+gui.ResetOnSpawn = false
+gui.DisplayOrder = 100
+gui.Parent = playerGui
+
+local function make(className, properties, parent)
+    local object = Instance.new(className)
+
+    for key, value in pairs(properties) do
+        object[key] = value
+    end
+
+    object.Parent = parent
+    return object
+end
+
+local function round(object)
+    make("UICorner", {
+        CornerRadius = UDim.new(0, 10)
+    }, object)
+end
+
+local function makeButton(parent, text, y)
+    local button = make("TextButton", {
+        Size = UDim2.new(1, -24, 0, 38),
+        Position = UDim2.new(0, 12, 0, y),
+        BackgroundColor3 = BLUE,
+        Text = text,
+        TextColor3 = WHITE,
+        TextSize = 14,
+        Font = Enum.Font.GothamBold,
+        Active = true,
+        AutoButtonColor = true
+    }, parent)
+
+    round(button)
+    return button
+end
+
+local function makeLabel(parent, text, y, height)
+    return make("TextLabel", {
+        Size = UDim2.new(1, -24, 0, height or 32),
+        Position = UDim2.new(0, 12, 0, y),
+        BackgroundTransparency = 1,
+        Text = text,
+        TextColor3 = WHITE,
+        TextSize = 13,
+        TextWrapped = true,
+        Font = Enum.Font.Gotham
+    }, parent)
+end
+
+local function makePanel(name, height)
+    local frame = make("Frame", {
+        Name = name,
+        Size = UDim2.fromOffset(310, height),
+        Position = UDim2.new(0.5, -155, 0.5, -height / 2),
+        BackgroundColor3 = PANEL,
+        BorderSizePixel = 0,
+        Visible = false,
+        Active = true
+    }, gui)
+
+    round(frame)
+
+    makeLabel(
+        frame,
+        "CHIPEO | " .. string.upper(name),
+        4,
+        34
+    ).TextColor3 = BLUE
+
+    -- CORREGIDO: argumentos en el orden correcto
+    local close = make("TextButton", {
+        Name = "Cerrar",
+        Size = UDim2.fromOffset(30, 30),
+        Position = UDim2.new(1, -36, 0, 4),
+        BackgroundColor3 = Color3.fromRGB(190, 55, 65),
+        Text = "X",
+        TextColor3 = WHITE,
+        TextSize = 14,
+        Font = Enum.Font.GothamBold,
+        Active = true
+    }, frame)
+
+    round(close)
+
+    return frame, close
+end
+
+-- ACCESO
+local login = make("Frame", {
+    Name = "Acceso",
+    Size = UDim2.fromOffset(300, 190),
+    Position = UDim2.new(0.5, -150, 0.5, -95),
+    BackgroundColor3 = DARK,
+    BorderSizePixel = 0,
+    Active = true
+}, gui)
+
+round(login)
+
+makeLabel(login, "CHIPEO v3.0", 5, 40).TextColor3 = BLUE
+
+local keyBox = make("TextBox", {
+    Size = UDim2.new(1, -24, 0, 38),
+    Position = UDim2.new(0, 12, 0, 52),
+    BackgroundColor3 = PANEL,
+    TextColor3 = WHITE,
+    PlaceholderText = "Introduce tu key",
+    PlaceholderColor3 = Color3.fromRGB(170, 180, 200),
+    Text = "",
+    TextSize = 15,
+    Font = Enum.Font.Gotham,
+    ClearTextOnFocus = false,
+    Active = true
+}, login)
+
+round(keyBox)
+
+local loginButton = makeButton(login, "ENTRAR", 100)
+local loginMessage = makeLabel(login, "", 145, 30)
+
+-- BOTON FLOTANTE
+local openButton = make("TextButton", {
+    Name = "AbrirChipeo",
+    Size = UDim2.fromOffset(110, 40),
+    Position = UDim2.new(0, 12, 0.5, 0),
+    BackgroundColor3 = BLUE,
+    Text = "CHIPEO",
+    TextColor3 = WHITE,
+    TextSize = 14,
+    Font = Enum.Font.GothamBold,
+    Visible = false,
+    Active = true
+}, gui)
+
+round(openButton)
+
+-- PANELES
+local owner, closeOwner = makePanel("OWNER", 410)
+local client, closeClient = makePanel("CLIENTE", 310)
+
+local function hidePanels()
+    owner.Visible = false
+    client.Visible = false
+end
+
+local function showCorrectPanel()
+    hidePanels()
+    openButton.Visible = false
+
+    if accessType == "OWNER" then
+        owner.Visible = true
+    elseif accessType == "CLIENTE" then
+        client.Visible = true
+    end
+end
+
+closeOwner.Activated:Connect(function()
+    owner.Visible = false
+    openButton.Visible = true
+end)
+
+closeClient.Activated:Connect(function()
+    client.Visible = false
+    openButton.Visible = true
+end)
+
+openButton.Activated:Connect(showCorrectPanel)
+
+-- OWNER: DESTINOS DE SESION
+makeLabel(owner, "Guardar destinos durante esta sesion", 40, 28)
+
+local savePosition = makeButton(
+    owner, "GUARDAR POSICION ACTUAL", 72
+)
+
+local destinationName = make("TextBox", {
+    Size = UDim2.new(1, -24, 0, 34),
+    Position = UDim2.new(0, 12, 0, 116),
+    BackgroundColor3 = DARK,
+    TextColor3 = WHITE,
+    PlaceholderText = "Nombre del destino",
+    Text = "",
+    Font = Enum.Font.Gotham,
+    TextSize = 13,
+    ClearTextOnFocus = false
+}, owner)
+
+round(destinationName)
+
+local destinationStatus = makeLabel(
+    owner, "No hay destinos guardados.", 154, 60
+)
+
+local listDestinations = makeButton(
+    owner, "ACTUALIZAR LISTA", 216
+)
+
+local deleteDestination = makeButton(
+    owner, "BORRAR ULTIMO DESTINO", 260
+)
+
+local openClientMenu = makeButton(
+    owner, "ABRIR MENU CLIENTE", 304
+)
+
+local function refreshDestinations()
+    if #destinations == 0 then
+        destinationStatus.Text = "No hay destinos guardados."
+        return
+    end
+
+    local lines = {}
+
+    for index, destination in ipairs(destinations) do
+        local p = destination.position
+
+        table.insert(lines, string.format(
+            "%d. %s (%.1f, %.1f, %.1f)",
+            index,
+            destination.name,
+            p.X,
+            p.Y,
+            p.Z
+        ))
+    end
+
+    destinationStatus.Text = table.concat(lines, "\n")
+end
+
+savePosition.Activated:Connect(function()
+    local character = player.Character
+    local root = character
+        and character:FindFirstChild("HumanoidRootPart")
+
+    if not root then
+        destinationStatus.Text = "Personaje no disponible."
+        return
+    end
+
+    local name = destinationName.Text:match("^%s*(.-)%s*$")
+
+    if name == "" then
+        name = "Destino " .. tostring(#destinations + 1)
+    end
+
+    table.insert(destinations, {
+        name = name,
+        position = root.Position
+    })
+
+    refreshDestinations()
+end)
+
+listDestinations.Activated:Connect(refreshDestinations)
+
+deleteDestination.Activated:Connect(function()
+    if #destinations > 0 then
+        table.remove(destinations, #destinations)
+    end
+
+    refreshDestinations()
+end)
+
+openClientMenu.Activated:Connect(function()
+    owner.Visible = false
+    client.Visible = true
+end)
+
+-- CLIENTE: OPCIONES DE INTERFAZ
+local farmStatus = makeLabel(
+    client, "Auto Farm: DESACTIVADO", 42, 28
+)
+
+local farmToggle = makeButton(
+    client, "ACTIVAR AUTO FARM", 76
+)
+
+local targetButton = makeButton(
+    client, "OBJETIVO: MONEDAS", 122
+)
+
+local farmInfo = makeLabel(
+    client,
+    "Este control guarda una preferencia de interfaz. "
+        .. "La recoleccion real requiere una integracion "
+        .. "autorizada en el juego.",
+    166,
+    66
+)
+
+local viewDestinations = makeButton(
+    client, "VER COORDENADAS GUARDADAS", 242
+)
+
+farmToggle.Activated:Connect(function()
+    farmEnabled = not farmEnabled
+
+    farmStatus.Text = farmEnabled
+        and "Auto Farm: ACTIVADO (preferencia)"
+        or "Auto Farm: DESACTIVADO"
+
+    farmToggle.Text = farmEnabled
+        and "DETENER AUTO FARM"
+        or "ACTIVAR AUTO FARM"
+
+    farmToggle.BackgroundColor3 = farmEnabled
+        and Color3.fromRGB(190, 55, 65)
+        or BLUE
+end)
+
+targetButton.Activated:Connect(function()
+    if farmTarget == "Monedas" then
+        farmTarget = "Objetos"
+    elseif farmTarget == "Objetos" then
+        farmTarget = "Dinero"
+    else
+        farmTarget = "Monedas"
+    end
+
+    targetButton.Text = "OBJETIVO: "
+        .. string.upper(farmTarget)
+end)
+
+viewDestinations.Activated:Connect(refreshDestinations)
+
+-- VALIDACION DE KEYS
+local function checkKey()
+    local key = keyBox.Text:match("^%s*(.-)%s*$")
+
+    if key == OWNER_KEY then
+        accessType = "OWNER"
+    elseif key == CLIENT_KEY then
+        accessType = "CLIENTE"
+    else
+        loginMessage.Text = "Key incorrecta"
+        keyBox.Text = ""
+        return
+    end
+
+    login.Visible = false
+    loginMessage.Text = ""
+    showCorrectPanel()
+end
+
+loginButton.Activated:Connect(checkKey)
+
+keyBox.FocusLost:Connect(function(enterPressed)
+    if enterPressed then
+        checkKey()
+    end
+end)
+
+print("CHIPEO v3.0 FIX cargado correctamente")
